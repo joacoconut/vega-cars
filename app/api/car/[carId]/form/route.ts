@@ -1,14 +1,14 @@
 import { db } from "@/lib/db";
-import { useAuth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: { carId: string } }
+  context: any // 👈 el cambio importante
 ) {
   try {
-    const { userId } = useAuth(); // auth() ya no necesita `await` acá
-    const { carId } = context.params;
+    const { userId } = auth(); // Clerk ya no requiere await
+    const { carId } = context.params; // se accede a params desde context
     const values = await req.json();
 
     if (!userId) {
