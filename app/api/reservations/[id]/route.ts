@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const deleted = await db.order.delete({
-      where: { id: params.id },
+      where: { id: context.params.id },
     });
 
     return NextResponse.json({
