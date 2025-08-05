@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { auth } from "@clerk/nextjs/server";
+import { useAuth } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
@@ -7,7 +7,7 @@ export async function PATCH(
   context: any // 👈 el cambio importante
 ) {
   try {
-    const { userId } = auth(); // Clerk ya no requiere await
+    const { userId } = useAuth(); // Clerk ya no requiere await
     const { carId } = context.params; // se accede a params desde context
     const values = await req.json();
 

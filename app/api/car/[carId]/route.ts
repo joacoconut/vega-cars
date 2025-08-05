@@ -1,64 +1,56 @@
 import { db } from "@/lib/db";
+import { useAuth } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function DELETE(
-  req: Request,
-  {
-    params,
-  }: {
-    params: { carId: string };
-  }
-) {
+// PATCH — actualizar auto
+export async function PATCH(req: NextRequest, context: any) {
   try {
-    const { userId } = await auth();
-    const { carId } = params;
-
-    if (!userId) {
-      return new NextResponse("Unaouthorized", {
-        status: 400,
-      });
-    }
-
-    const deletedCar = await db.car.delete({
-      where: {
-        id: carId,
-      },
-    });
-
-    return NextResponse.json(deletedCar);
-  } catch (error) {
-    console.log("[DELETE CAR ID]", error);
-    return new NextResponse("Internal Error", { status: 500 });
-  }
-}
-
-export async function PATCH(
-  req: Request,
-  { params }: { params: { carId: string } }
-) {
-  try {
-    const { userId } = await auth();
-    const { carId } = params;
-    const { isPublish } = await req.json();
+    const { userId } = useAuth(); // Clerk ya no requiere await
+    const { carId } = context.params;
+    const values = await req.json();
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const publishedCar = await db.car.update({
+    const car = await db.car.update({
       where: {
         id: carId,
         userId,
       },
       data: {
-        isPublish: isPublish,
+        ...values,
       },
     });
 
-    return NextResponse.json(publishedCar);
+    return NextResponse.json(car);
   } catch (error) {
-    console.log("[CAR ID PTCH]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("[CAR PATCH ERROR]", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+
+// DELETE — eliminar auto
+export async function DELETE(req: NextRequest, context: any) {
+  try {
+    const { userId } = useAuth();
+    const { carId } = context.params;
+
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    await db.car.delete({
+      where: {
+        id: carId,
+        userId,
+      },
+    });
+
+    return new NextResponse("Car deleted successfully", { status: 200 });
+  } catch (error) {
+    console.error("[CAR DELETE ERROR]", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
