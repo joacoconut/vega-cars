@@ -6,8 +6,10 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   try {
+    const { id } = context.params;
+
     const deleted = await db.order.delete({
-      where: { id: context.params.id },
+      where: { id },
     });
 
     return NextResponse.json({
