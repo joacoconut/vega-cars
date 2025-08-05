@@ -1,33 +1,16 @@
 import Stripe from "stripe";
-
 import { stripe } from "@/lib/stripe";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { headers } from "next/headers";
 
 const corsHeaders = {
-  "Acces-Control-Allow-Origin": "*",
-  "Acces-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Acces-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-export async function POST(
-  req: Request,
-  {
-    params,
-  }: {
-    params: {
-      carId: string;
-      priceDay: string;
-      startDate: Date;
-      endDate: Date;
-      carName: string;
-    };
-  }
-) {
-  // The error occurs because 'auth' returns a Promise<Auth>, not the Auth object directly.
-  // You must await the promise before accessing 'userId'.
+export async function POST(req: Request) {
   const { userId } = await auth();
   const { carId, priceDay, startDate, endDate, carName } = await req.json();
 
@@ -36,7 +19,7 @@ export async function POST(
   }
 
   if (!carId) {
-    return new NextResponse("Car id are required", { status: 400 });
+    return new NextResponse("Car id is required", { status: 400 });
   }
 
   const start = new Date(startDate);
@@ -65,12 +48,12 @@ export async function POST(
   const order = await db.order.create({
     data: {
       carId,
-      carName: carName,
-      userId: userId,
+      carName,
+      userId,
       status: "confirmed",
       totalAmount: totalAmount.toString(),
-      orderDate: startDate,
-      orderEndDate: endDate,
+      orderDate: start,
+      orderEndDate: end,
     },
   });
 
@@ -85,17 +68,12 @@ export async function POST(
     cancel_url: `${process.env.NEXT_PUBLIC_FRONTEND_STORE_URL}/order-error`,
     metadata: {
       orderId: order.id,
-      carId: carId,
+      carId,
       startDate,
       endDate,
       numberOfDays,
     },
   });
 
-  return NextResponse.json(
-    { url: session.url },
-    {
-      headers: corsHeaders,
-    }
-  );
+  return NextResponse.json({ url: session.url }, { headers: corsHeaders });
 }
